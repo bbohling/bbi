@@ -11,9 +11,21 @@ module.exports = {
 
   getProgress: function () {
     // TODO: not working (not merging lastYearProgress). guessing because lastYearProgress is a promise
+    //return thisYearProgress() works just for this year, but want to have lastYear too
     // want end result to be something like: progress: { thisYear: 180, lastYear: 200 }
     //return thisYearProgress().then(_.partialRight(_.merge, lastYearProgress));
-    return thisYearProgress()
+    //return lastYearProgress();
+
+    // this works, but certainly is NOT pretty:
+    //  [
+    //    {
+    //      "thisYear": "186"
+    //    },
+    //    {
+    //      "lastYear": "503"
+    //    }
+    //  ]
+    return Promise.join(thisYearProgress(), lastYearProgress());
   }
 
 };
@@ -31,7 +43,15 @@ function thisYearProgress() {
   };
   // TODO: get and return mileage
 
-  return request(options).get(1).then(JSON.parse).then(getMileage);
+  return request(options)
+            .get(1)
+            .then(JSON.parse)
+            .then(getMileage)
+            .then(thisYearObject)
+}
+
+function thisYearObject(miles) {
+  return { thisYear: miles };
 }
 
 function lastYearProgress() {
@@ -45,8 +65,15 @@ function lastYearProgress() {
     },
     useQuerystring: true
   };
-  // TODO: get and return mileage
-  return request(options).get(1).then(JSON.parse);
+  return request(options)
+    .get(1)
+    .then(JSON.parse)
+    .then(getMileage)
+    .then(lastYearObject)
+}
+
+function lastYearObject(miles) {
+  return { lastYear: miles };
 }
 
 function getMileage(results) {
@@ -60,6 +87,10 @@ function getMileage(results) {
   var miles = (meters > 0) ? numberWithCommas(rawMiles) : 0;
 
   return miles;
+}
+
+function numberWithCommas(x) {
+  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 /*
