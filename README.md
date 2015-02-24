@@ -1,3 +1,3 @@
 # bbi
 
-a [Sails](http://sailsjs.org) application
+some data via APIs
