@@ -8,8 +8,8 @@
 module.exports = {
 
   progress: function(req, res) {
-    var retVal = {};
-    retVal = strava.getProgress()
+  	var name = req.params.name;
+    strava.getProgress(name)
       .then(_.bind(res.json, res), _.bind(res.send, res));
   }
 
