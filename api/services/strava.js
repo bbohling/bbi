@@ -25,8 +25,6 @@ module.exports = {
             options.qs.access_token = sails.config.stravaToken;
             break;
         }
-        
-        sails.log('strava: ', options.qs.access_token);
 
         var today = moment().format('X');
         var firstDayThisYear = moment().startOf('year').format('X');
@@ -78,7 +76,8 @@ function processData(results) {
         return sum + num
     });
     var rawMiles = Math.ceil(meters / 1609.34);
-    data.miles = (meters > 0) ? numberWithCommas(rawMiles) : 0;
+    // data.miles = (meters > 0) ? numberWithCommas(rawMiles) : 0;
+    data.miles = (meters > 0) ? rawMiles : 0;
 
     // ride average
     data.rideAverage = Math.round((rawMiles / data.rides) * 10) / 10;
@@ -97,7 +96,8 @@ function processData(results) {
     var climbingMeters = _.reduce(climbing, function(sum, num) {
         return sum + num
     });
-    var climbingFeet = (climbingMeters > 0) ? numberWithCommas(Math.ceil(climbingMeters / 0.3048)) : 0;
+    //var climbingFeet = (climbingMeters > 0) ? numberWithCommas(Math.ceil(climbingMeters / 0.3048)) : 0;
+    var climbingFeet = (climbingMeters > 0) ? Math.ceil(climbingMeters / 0.3048) : 0;
     data.climbing = climbingFeet;
 
     // calories
@@ -105,7 +105,11 @@ function processData(results) {
     var cals = _.reduce(calories, function(sum, num) {
         return sum + num
     });
-    data.calories = (cals > 0) ? numberWithCommas(Math.ceil(cals)) : 0;
+    // data.calories = (cals > 0) ? numberWithCommas(Math.ceil(cals)) : 0;
+    data.calories = (cals > 0) ? Math.ceil(cals) : 0;
+
+    // average calories 
+    data.caloriesAverage = Math.ceil(data.calories/data.rides);
 
     // moving time
     var times = _.pluck(results, 'moving_time');
@@ -113,7 +117,8 @@ function processData(results) {
         return sum + num
     });
     var minutes = time / 60;
-    data.movingTime = (minutes > 0) ? minutesToStr(minutes) : 0;
+    // data.movingTime = (minutes > 0) ? minutesToStr(minutes) : 0;
+    data.movingTimeMinutes = (minutes > 0) ? Math.ceil(minutes) : 0;
 
     return data;
 }
