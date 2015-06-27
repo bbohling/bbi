@@ -32,30 +32,30 @@ module.exports = {
         var firstDayLastYear = moment().subtract(1, 'years').startOf('year').format('X');
 
         return Promise.props({
-            thisYear: thisYearProgress(options, today, firstDayThisYear),
-            lastYear: lastYearProgress(options, lastYearToday, firstDayLastYear)
+            thisYear: progress(options, today, firstDayThisYear),
+            lastYear: progress(options, lastYearToday, firstDayLastYear)
         });
     }
 
 };
 
-function thisYearProgress(options, today, firstDayThisYear) {
+function progress(options, today, firstDayOfYear) {
     options.qs.before = today;
-    options.qs.after = firstDayThisYear;
+    options.qs.after = firstDayOfYear;
     return request(options)
         .get(1)
         .then(JSON.parse)
         .then(processData)
 }
-
-function lastYearProgress(options, lastYearToday, firstDayLastYear) {
-    options.qs.before = lastYearToday;
-    options.qs.after = firstDayLastYear;
-    return request(options)
-        .get(1)
-        .then(JSON.parse)
-        .then(processData)
-}
+//
+//function lastYearProgress(options, lastYearToday, firstDayLastYear) {
+//    options.qs.before = lastYearToday;
+//    options.qs.after = firstDayLastYear;
+//    return request(options)
+//        .get(1)
+//        .then(JSON.parse)
+//        .then(processData)
+//}
 
 function processData(results) {
     // only keep ride data
@@ -128,7 +128,7 @@ function processData(results) {
     var minutes = time / 60;
     // data.movingTime = (minutes > 0) ? minutesToStr(minutes) : 0;
     data.movingTimeMinutes = (minutes > 0) ? Math.ceil(minutes) : 0;
-console.log('\n\n===' + data + '\n\n===');
+
     return data;
 }
 
