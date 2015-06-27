@@ -66,7 +66,16 @@ function processData(results) {
     var data = {
 
     };
-
+    
+    // gear
+//    var noGear = _.map(results, function(activity) {
+//        if (!activity.gear_id) {
+//            return activity.id;
+//        }
+//    });
+    
+//    console.log('gear', noGear);
+    
     // total rides
     data.rides = results.length;
 
@@ -119,7 +128,7 @@ function processData(results) {
     var minutes = time / 60;
     // data.movingTime = (minutes > 0) ? minutesToStr(minutes) : 0;
     data.movingTimeMinutes = (minutes > 0) ? Math.ceil(minutes) : 0;
-
+console.log('\n\n===' + data + '\n\n===');
     return data;
 }
 
