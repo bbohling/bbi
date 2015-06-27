@@ -2,11 +2,7 @@ var moment = require('moment');
 var Promise = require("bluebird");
 var request = Promise.promisify(require("request"));
 
-module.exports = {
-
-    getProgress: function(user) {
-
-        var options = {
+var options = {
             url: sails.config.globals.urls.strava,
             qs: {
                 access_token: sails.config.stravaToken,
@@ -30,7 +26,10 @@ module.exports = {
         var firstDayThisYear = moment().startOf('year').format('X');
         var lastYearToday = moment().subtract(1, 'years').format('X');
         var firstDayLastYear = moment().subtract(1, 'years').startOf('year').format('X');
+        
+module.exports = {
 
+    getProgress: function(user) {
         return Promise.props({
             thisYear: progress(options, today, firstDayThisYear),
             lastYear: progress(options, lastYearToday, firstDayLastYear)
@@ -47,15 +46,6 @@ function progress(options, today, firstDayOfYear) {
         .then(JSON.parse)
         .then(processData)
 }
-//
-//function lastYearProgress(options, lastYearToday, firstDayLastYear) {
-//    options.qs.before = lastYearToday;
-//    options.qs.after = firstDayLastYear;
-//    return request(options)
-//        .get(1)
-//        .then(JSON.parse)
-//        .then(processData)
-//}
 
 function processData(results) {
     // only keep ride data
