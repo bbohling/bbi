@@ -38,6 +38,10 @@ module.exports.routes = {
     '/cycling/progress/:name': {
         controller: 'CyclingController',
         action: 'progress'
+    },
+    '/cycling/trends/:name': {
+        controller: 'CyclingController',
+        action: 'trends'
     }
 
     /***************************************************************************

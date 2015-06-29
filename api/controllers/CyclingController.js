@@ -11,6 +11,11 @@ module.exports = {
   	var name = req.params.name;
     strava.getProgress(name)
       .then(_.bind(res.json, res), _.bind(res.send, res));
+  },
+  trends: function(req, res) {
+  	var name = req.params.name;
+    strava.getTrend(name)
+      .then(_.bind(res.json, res), _.bind(res.send, res));
   }
 
 };
