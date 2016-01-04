@@ -147,7 +147,7 @@ function persistProgress(progressData, isThisYear) {
                 entry.progress = progress;
                 entry.save()
                     .then(function () {
-                         resolve(progressData);
+                        resolve(progressData);
                     })
                     .catch(function (err) {
                         console.log('=== Error saving progress: ', err);
@@ -194,16 +194,26 @@ function processData(results) {
 
         if (fullReport) {
             // ride average
-            data.rideAverage = Math.round((rawMiles / data.rides) * 10) / 10;
+            data.rideAverage = 0;
+            if (!isNaN(rawMiles) && data.rides > 0) {
+                data.rideAverage = Math.round((rawMiles / data.rides) * 10) / 10;
+            }
 
             // average miles per day
-            var day = moment().dayOfYear();
-            var avg = rawMiles / day;
-            data.dailyAverage = Math.round(avg * 10) / 10;
+            data.dailyAverage = 0;
+            if (!isNaN(rawMiles)) {
+                var day = moment().dayOfYear();
+                var avg = rawMiles / day;
+                data.dailyAverage = Math.round(avg * 10) / 10;
+            }
+
 
             // percentage riding days
-            var ridePercentage = results.length / day;
-            data.percentageOfDays = Math.floor(ridePercentage * 100);
+            data.percentageOfDays = 0;
+            if (results.length > 0) {
+                var ridePercentage = results.length / day;
+                data.percentageOfDays = Math.floor(ridePercentage * 100);
+            }
 
         }
 
@@ -224,7 +234,10 @@ function processData(results) {
 
         if (fullReport) {
             // average calories
-            data.caloriesAverage = Math.ceil(data.calories / data.rides);
+            data.caloriesAverage = 0;
+            if (data.rides > 0) {
+                data.caloriesAverage = Math.ceil(data.calories / data.rides);
+            }
 
             // moving time
             var times = _.pluck(results, 'moving_time');
