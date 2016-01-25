@@ -22,19 +22,42 @@ switch (user) {
         break;
 }
 
-var today = moment().format('X');
-var todayDate = moment().format('YYYYMMDD');
-var firstDayThisYear = moment().startOf('year').format('X');
-var lastYearToday = moment().subtract(1, 'years').format('X');
-var firstDayLastYear = moment().subtract(1, 'years').startOf('year').format('X');
+var dates = {};
+
+Object.defineProperty(dates, 'today', {
+    get: function () { return moment().format('X'); }
+});
+
+Object.defineProperty(dates, 'todayDate', {
+    get: function () { return moment().format('YYYYMMDD'); }
+});
+
+Object.defineProperty(dates, 'firstDayThisYear', {
+    get: function () { return moment().startOf('year').format('X'); }
+});
+
+Object.defineProperty(dates, 'lastYearToday', {
+    get: function () { return moment().subtract(1, 'years').format('X'); }
+});
+
+Object.defineProperty(dates, 'firstDayLastYear', {
+    get: function () { return moment().subtract(1, 'years').startOf('year').format('X'); }
+});
+
+// var today = moment().format('X');
+// var todayDate = moment().format('YYYYMMDD');
+// var firstDayThisYear = moment().startOf('year').format('X');
+// var lastYearToday = moment().subtract(1, 'years').format('X');
+// var firstDayLastYear = moment().subtract(1, 'years').startOf('year').format('X');
+
 var fullReport = true;
 
 module.exports = {
 
     getProgress: function (user) {
-        return Cycling.findOne({ entry: user + '-' + todayDate })
+        return Cycling.findOne({ entry: user + '-' + dates.todayDate })
             .then(function (entry) {
-                // console.log('ENTRY: ', entry);
+                console.log('TODAY DATE: ', dates.todayDate);
                 if (entry && entry.progress && entry.progress.lastYear && entry.progress.thisYear) {
                     console.log('-- cache data');
                     return new Promise(function (resolve) {
@@ -44,8 +67,8 @@ module.exports = {
                 else {
                     console.log('-- real-time data');
                     return Promise.props({
-                        thisYear: progress(options, today, firstDayThisYear),
-                        lastYear: progress(options, lastYearToday, firstDayLastYear)
+                        thisYear: progress(options, dates.today, dates.firstDayThisYear),
+                        lastYear: progress(options, dates.lastYearToday, dates.firstDayLastYear)
                     });
                 }
             })
@@ -56,8 +79,8 @@ module.exports = {
     getTrend: function (user) {
         fullReport = false;
         return Promise.props({
-            thisYear: progress(options, today, firstDayThisYear),
-            lastYear: progress(options, lastYearToday, firstDayLastYear)
+            thisYear: progress(options, dates.today, dates.firstDayThisYear),
+            lastYear: progress(options, dates.lastYearToday, dates.firstDayLastYear)
         })
             .then(transformData);
     }
@@ -104,7 +127,7 @@ function progress(options, endDate, startDate) {
     options.qs.before = endDate;
     options.qs.after = startDate;
     var isThisYear;
-    endDate === today ? isThisYear = true : isThisYear = false;
+    endDate === dates.today ? isThisYear = true : isThisYear = false;
     console.log('>> isThisYear: ', isThisYear);
     return request(options)
         .then(JSON.parse)
@@ -117,7 +140,7 @@ function progress(options, endDate, startDate) {
 
 function persistData(results) {
     // persist
-    return Cycling.findOrCreate({ entry: user + '-' + todayDate }, { entry: user + '-' + todayDate, data: results })
+    return Cycling.findOrCreate({ entry: user + '-' + dates.todayDate }, { entry: user + '-' + dates.todayDate, data: results })
         .then(function () {
             return results;
         })
@@ -136,7 +159,7 @@ function persistProgress(progressData, isThisYear) {
         progress.lastYear = progressData;
     }
     return new Promise(function (resolve, reject) {
-        Cycling.findOne({ entry: user + '-' + todayDate })
+        Cycling.findOne({ entry: user + '-' + dates.todayDate })
             .then(function (entry) {
                 if (entry.progress) {
                     console.log('==HERE==');
@@ -161,6 +184,10 @@ function persistProgress(progressData, isThisYear) {
     });
 }
 
+function simpleDate(dt) {
+  return moment(dt).format('YYYYMMDD');
+}
+
 function processData(results) {
     return new Promise(function (resolve) {
         // only keep ride data
@@ -173,16 +200,28 @@ function processData(results) {
         };
 
         // gear
-        //    var noGear = _.pluck(_.filter(results, function(activity) {
-        //        if (!activity.gear_id) {
-        //            return activity.id;
-        //        }
-        //    }), 'id');
+        var noGear = _.pluck(_.filter(results, function (activity) {
+            if (!activity.gear_id) {
+                return activity.id;
+            }
+        }), 'id');
 
-        //    console.log('gear', noGear);
+        console.log('gear', noGear);
 
         // total rides
+
+        // TODO: probably should change this to capture days ridden
+        //       sometimes I do multiple trainer rides in a single session
+        //       so simply using number of rides is a bit misleading
         data.rides = results.length;
+
+        // days ridden
+        var rideDates = _.pluck(results, 'start_date');
+        var rideNewDates = _.map(rideDates, simpleDate);
+        var daysRidden = _.uniq(rideNewDates).length;
+        data.daysRidden = daysRidden;
+
+
 
         // miles
         var distances = _.pluck(results, 'distance');
@@ -211,7 +250,8 @@ function processData(results) {
             // percentage riding days
             data.percentageOfDays = 0;
             if (results.length > 0) {
-                var ridePercentage = results.length / day;
+                // var ridePercentage = results.length / day;
+                var ridePercentage = daysRidden / day;
                 data.percentageOfDays = Math.floor(ridePercentage * 100);
             }
 
@@ -220,7 +260,7 @@ function processData(results) {
         // climbing
         var climbing = _.pluck(results, 'total_elevation_gain');
         var climbingMeters = _.reduce(climbing, function (sum, num) {
-            return sum + num
+            return sum + num;
         });
         var climbingFeet = (climbingMeters > 0) ? Math.ceil(climbingMeters / 0.3048) : 0;
         data.climbing = climbingFeet;
