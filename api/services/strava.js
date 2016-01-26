@@ -185,7 +185,7 @@ function persistProgress(progressData, isThisYear) {
 }
 
 function simpleDate(dt) {
-  return moment(dt).format('YYYYMMDD');
+  return moment.utc(dt).format('YYYYMMDD');
 }
 
 function processData(results) {
@@ -216,8 +216,9 @@ function processData(results) {
         data.rides = results.length;
 
         // days ridden
-        var rideDates = _.pluck(results, 'start_date');
+        var rideDates = _.pluck(results, 'start_date_local');
         var rideNewDates = _.map(rideDates, simpleDate);
+        console.log('ride dates: ', rideNewDates);
         var daysRidden = _.uniq(rideNewDates).length;
         data.daysRidden = daysRidden;
 
