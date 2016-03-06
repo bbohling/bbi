@@ -2,24 +2,31 @@ var moment = require('moment');
 var Promise = require("bluebird");
 var request = require("request-promise");
 
-var options = {
-    url: sails.config.globals.urls.strava,
-    qs: {
-        access_token: sails.config.stravaToken,
-        per_page: 200
-    },
-    useQuerystring: true
-};
+var options;
+var user;
 
-var user = user || 'bb';
+function setOptions(biker) {
 
-switch (user) {
-    case 'db':
-        options.qs.access_token = sails.config.dbStravaToken;
-        break;
-    default:
-        options.qs.access_token = sails.config.stravaToken;
-        break;
+    options = {
+        url: sails.config.globals.urls.strava,
+        qs: {
+            access_token: sails.config.stravaToken,
+            per_page: 200
+        },
+        useQuerystring: true
+    };
+    
+    user = biker || 'bb';
+
+    switch (user) {
+        case 'db':
+            options.qs.access_token = sails.config.dbStravaToken;
+            break;
+        default:
+            options.qs.access_token = sails.config.stravaToken;
+            break;
+    }
+    
 }
 
 var dates = {};
@@ -55,6 +62,8 @@ var fullReport = true;
 module.exports = {
 
     getProgress: function (user) {
+        setOptions(user);
+        console.log('\n\n------ USER: ', user);
         return Cycling.findOne({ entry: user + '-' + dates.todayDate })
             .then(function (entry) {
                 console.log('TODAY DATE: ', dates.todayDate);
@@ -77,6 +86,7 @@ module.exports = {
             });
     },
     getTrend: function (user) {
+        setOptions(user);
         fullReport = false;
         return Promise.props({
             thisYear: progress(options, dates.today, dates.firstDayThisYear),
@@ -128,7 +138,8 @@ function progress(options, endDate, startDate) {
     options.qs.after = startDate;
     var isThisYear;
     endDate === dates.today ? isThisYear = true : isThisYear = false;
-    console.log('>> isThisYear: ', isThisYear);
+//    console.log('>> isThisYear: ', isThisYear);
+    console.log('user (progress): ', user);
     return request(options)
         .then(JSON.parse)
         .then(persistData)
@@ -140,6 +151,7 @@ function progress(options, endDate, startDate) {
 
 function persistData(results) {
     // persist
+    console.log('user (persistData): ', user);
     return Cycling.findOrCreate({ entry: user + '-' + dates.todayDate }, { entry: user + '-' + dates.todayDate, data: results })
         .then(function () {
             return results;
@@ -162,9 +174,9 @@ function persistProgress(progressData, isThisYear) {
         Cycling.findOne({ entry: user + '-' + dates.todayDate })
             .then(function (entry) {
                 if (entry.progress) {
-                    console.log('==HERE==');
-                    console.log('entry.progress = ', entry.progress);
-                    console.log('progress = ', progress);
+//                    console.log('==HERE==');
+//                    console.log('entry.progress = ', entry.progress);
+//                    console.log('progress = ', progress);
                     progress = _.merge(entry.progress, progress);
                 }
                 entry.progress = progress;
@@ -218,7 +230,7 @@ function processData(results) {
         // days ridden
         var rideDates = _.pluck(results, 'start_date_local');
         var rideNewDates = _.map(rideDates, simpleDate);
-        console.log('ride dates: ', rideNewDates);
+//        console.log('ride dates: ', rideNewDates);
         var daysRidden = _.uniq(rideNewDates).length;
         data.daysRidden = daysRidden;
 
